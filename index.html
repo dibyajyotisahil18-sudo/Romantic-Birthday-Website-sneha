@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Happy Birthday</title>
+
+<!--
+  ─────────────────────────────────────────────────────────────
+  FILES TO PUT NEXT TO THIS HTML FILE (same folder):
+     your-photo.jpg   → hero portrait (portrait orientation, ~900x1200)
+     photo1.jpg … photo4.jpg  → memories
+     video.mp4        → the video section
+     music.mp3        → background music (optional)
+  Sab kuch neeche CONFIG object se change ho jata hai.
+  ─────────────────────────────────────────────────────────────
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,500;1,300;1,500&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --night:#120A16;
+  --night-2:#1C0F22;
+  --plum:#2A1430;
+  --gold:#E7C27D;
+  --gold-soft:#C9A469;
+  --rose:#D8788F;
+  --cream:#F4EAE2;
+  --muted:rgba(244,234,226,.62);
+  --glass:rgba(255,255,255,.07);
+  --glass-line:rgba(231,194,125,.28);
+  --display:"Cormorant Garamond",Georgia,"Times New Roman",serif;
+  --body:"Jost","Helvetica Neue",Arial,sans-serif;
+  --shell:min(1080px,100% - 2.5rem);
+}
+/* This page is intentionally a night-time cinematic scene in both themes. */
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --night:#120A16; } }
+:root[data-theme="dark"]{ --night:#120A16; }
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--night); color:var(--cream);
+  font-family:var(--body); font-weight:300; font-size:clamp(15px,1vw + 12px,17px);
+  line-height:1.7; overflow-x:hidden;
+}
+body.locked{overflow:hidden}
+img,video{max-width:100%; display:block}
+a{color:var(--gold)}
+:focus-visible{outline:2px solid var(--gold); outline-offset:3px; border-radius:4px}
+
+/* ambient light + film grain ------------------------------------------- */
+.ambient{position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(60% 45% at 78% 8%, rgba(216,120,143,.22), transparent 70%),
+    radial-gradient(55% 40% at 12% 22%, rgba(231,194,125,.14), transparent 72%),
+    radial-gradient(70% 60% at 50% 110%, rgba(42,20,48,.9), transparent 70%);
+}
+.grain{position:fixed; inset:-50%; z-index:1; pointer-events:none; opacity:.05; mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>");
+  animation:grain 6s steps(6) infinite;
+}
+@keyframes grain{
+  0%{transform:translate(0,0)} 20%{transform:translate(-3%,2%)} 40%{transform:translate(2%,-3%)}
+  60%{transform:translate(-2%,-2%)} 80%{transform:translate(3%,1%)} 100%{transform:translate(0,0)}
+}
+#petals{position:fixed; inset:0; z-index:1; pointer-events:none}
+
+/* cinematic intro ------------------------------------------------------ */
+#intro{position:fixed; inset:0; z-index:50; background:#08040A; display:grid; place-items:center;
+  transition:opacity .9s ease, visibility .9s}
+#intro.done{opacity:0; visibility:hidden}
+.bar{position:fixed; left:0; right:0; height:22vh; background:#08040A; z-index:51;
+  transition:transform 1.3s cubic-bezier(.76,0,.24,1)}
+.bar.top{top:0} .bar.bottom{bottom:0}
+#intro.done ~ .bar.top{transform:translateY(-100%)}
+#intro.done ~ .bar.bottom{transform:translateY(100%)}
+.intro-inner{text-align:center; padding:0 1.5rem; max-width:34rem}
+.intro-line{font-family:var(--display); font-weight:300; font-style:italic;
+  font-size:clamp(1.5rem,4.5vw,2.4rem); line-height:1.35; color:var(--cream);
+  opacity:0; letter-spacing:.01em}
+.intro-line.show{animation:lineIn 3.1s ease forwards}
+@keyframes lineIn{
+  0%{opacity:0; transform:translateY(14px) scale(.99); filter:blur(6px)}
+  22%,68%{opacity:1; transform:none; filter:blur(0)}
+  100%{opacity:0; transform:translateY(-10px); filter:blur(5px)}
+}
+.begin{margin-top:2.6rem; opacity:0; transition:opacity 1s ease .2s}
+.begin.show{opacity:1}
+.btn{
+  font-family:var(--body); font-size:.82rem; letter-spacing:.22em; text-transform:uppercase;
+  color:var(--gold); background:transparent; border:1px solid var(--glass-line);
+  padding:.95rem 2.1rem; border-radius:999px; cursor:pointer;
+  transition:background .4s ease, color .4s ease, transform .4s ease;
+}
+.btn:hover{background:var(--gold); color:#180D1C; transform:translateY(-2px)}
+.begin small{display:block; margin-top:1rem; font-size:.72rem; letter-spacing:.14em; color:var(--muted)}
+.skip{position:fixed; right:1.2rem; bottom:1.2rem; z-index:52; background:none; border:0;
+  color:var(--muted); font-family:var(--body); font-size:.72rem; letter-spacing:.16em; cursor:pointer}
+#intro.done ~ .skip{display:none}
+
+/* shared layout -------------------------------------------------------- */
+main{position:relative; z-index:2}
+section{width:var(--shell); margin-inline:auto; padding:clamp(4.5rem,11vh,8rem) 0}
+.eyebrow{font-family:var(--display); font-style:italic; font-size:1.05rem; color:var(--gold-soft); margin:0 0 .6rem}
+h2{font-family:var(--display); font-weight:300; font-size:clamp(2rem,5vw,3.1rem);
+  line-height:1.12; margin:0 0 1.4rem; letter-spacing:-.01em}
+.reveal{opacity:0; transform:translateY(22px); transition:opacity 1s ease, transform 1s cubic-bezier(.22,1,.36,1)}
+.reveal.in{opacity:1; transform:none}
+
+/* hero ----------------------------------------------------------------- */
+.hero{min-height:100svh; display:grid; align-items:center;
+  grid-template-columns:1.05fr .95fr; gap:clamp(2rem,5vw,4.5rem)}
+.hero h1{font-family:var(--display); font-weight:300; margin:.4rem 0 1rem;
+  font-size:clamp(3.1rem,10vw,6.4rem); line-height:.95; letter-spacing:-.02em}
+.hero h1 em{font-style:italic; color:var(--gold); display:block}
+.hero p{max-width:34ch; color:var(--muted); margin:0 0 2rem}
+.date{font-family:var(--body); font-size:.76rem; letter-spacing:.28em; text-transform:uppercase; color:var(--gold-soft)}
+.hero-cta{display:flex; gap:1rem; flex-wrap:wrap; align-items:center}
+
+/* arch glass frame */
+.frame{
+  position:relative; padding:14px; border:1px solid var(--glass-line);
+  background:linear-gradient(155deg, rgba(255,255,255,.16), rgba(255,255,255,.03));
+  -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px);
+  border-radius:999px 999px 20px 20px;
+  box-shadow:0 40px 90px -30px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,255,255,.22);
+  transform:translateY(0) rotateX(0) rotateY(0); transform-style:preserve-3d;
+  transition:transform .5s cubic-bezier(.22,1,.36,1);
+}
+.frame::after{content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+  background:linear-gradient(115deg, transparent 38%, rgba(255,255,255,.3) 48%, transparent 58%);
+  opacity:0; transition:opacity .6s}
+.frame:hover::after{opacity:1}
+.frame .ph{aspect-ratio:3/4; border-radius:999px 999px 10px 10px; overflow:hidden; background:var(--plum)}
+.frame .ph img{width:100%; height:100%; object-fit:cover}
+.frame-cap{position:absolute; left:50%; bottom:-1.5rem; transform:translateX(-50%);
+  font-family:var(--display); font-style:italic; color:var(--gold-soft); white-space:nowrap}
+
+/* placeholder for missing files */
+.missing{width:100%; height:100%; display:grid; place-items:center; text-align:center; gap:.4rem;
+  background:linear-gradient(150deg,#2A1430,#150C1A); color:var(--muted);
+  font-size:.74rem; letter-spacing:.14em; padding:1rem}
+.missing b{display:block; color:var(--gold-soft); font-weight:400; font-size:.8rem; letter-spacing:.1em}
+
+/* video ---------------------------------------------------------------- */
+.video-wrap{position:relative; border:1px solid var(--glass-line); border-radius:20px; overflow:hidden;
+  background:#0C060F; box-shadow:0 50px 100px -40px rgba(0,0,0,.9)}
+.video-wrap video{width:100%; aspect-ratio:16/9; object-fit:cover; background:#0C060F}
+.video-note{margin-top:1rem; font-size:.8rem; color:var(--muted)}
+
+/* memories ------------------------------------------------------------- */
+.grid{display:grid; grid-template-columns:repeat(4,1fr); gap:1.1rem}
+.mem{position:relative; border:1px solid var(--glass-line); background:var(--glass); padding:10px 10px 2.6rem;
+  border-radius:14px; cursor:pointer; -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+  transition:transform .45s cubic-bezier(.22,1,.36,1), box-shadow .45s ease}
+.mem:nth-child(odd){transform:rotate(-1.2deg)}
+.mem:nth-child(even){transform:rotate(1deg)}
+.mem:hover,.mem:focus-visible{transform:rotate(0) translateY(-8px); box-shadow:0 30px 60px -25px rgba(0,0,0,.8)}
+.mem .ph{aspect-ratio:4/5; overflow:hidden; border-radius:8px; background:var(--plum)}
+.mem .ph img{width:100%; height:100%; object-fit:cover; transition:transform .7s cubic-bezier(.22,1,.36,1)}
+.mem:hover .ph img{transform:scale(1.06)}
+.mem figcaption{position:absolute; left:12px; right:12px; bottom:.75rem; font-family:var(--display);
+  font-style:italic; font-size:1rem; color:var(--cream)}
+
+/* lightbox */
+#lightbox{position:fixed; inset:0; z-index:60; display:none; place-items:center; padding:1.5rem;
+  background:rgba(8,4,10,.94); -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px)}
+#lightbox.open{display:grid}
+#lightbox figure{margin:0; max-width:min(720px,100%); text-align:center; animation:pop .5s cubic-bezier(.22,1,.36,1)}
+#lightbox img{max-height:74svh; width:auto; margin-inline:auto; border-radius:12px; border:1px solid var(--glass-line)}
+#lightbox figcaption{margin-top:1rem; font-family:var(--display); font-style:italic; font-size:1.2rem}
+@keyframes pop{from{opacity:0; transform:scale(.94)} to{opacity:1; transform:none}}
+.close{position:absolute; top:1.2rem; right:1.4rem; background:none; border:0; color:var(--cream);
+  font-size:1.8rem; line-height:1; cursor:pointer}
+
+/* letter --------------------------------------------------------------- */
+.letter{border:1px solid var(--glass-line); border-radius:22px; padding:clamp(1.8rem,5vw,3.6rem);
+  background:linear-gradient(160deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+  -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px); max-width:62ch; margin-inline:auto}
+.letter p{font-family:var(--display); font-size:clamp(1.15rem,2.6vw,1.45rem); line-height:1.72; margin:0 0 1.15rem}
+.letter p:last-of-type{margin-bottom:0}
+.sign{display:block; margin-top:2rem; font-family:var(--display); font-style:italic; font-size:1.4rem; color:var(--gold)}
+
+/* gift ----------------------------------------------------------------- */
+.gift-stage{display:grid; place-items:center; gap:2rem; text-align:center}
+.box{position:relative; width:min(240px,62vw); aspect-ratio:1; cursor:pointer; border:0; background:none;
+  padding:0; perspective:700px}
+.box-body{position:absolute; inset:22% 0 0; border-radius:10px;
+  background:linear-gradient(150deg,#3A1A3F,#25102B); border:1px solid var(--glass-line);
+  box-shadow:0 30px 60px -25px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.12)}
+.box-lid{position:absolute; left:-4%; right:-4%; top:8%; height:20%; border-radius:8px;
+  background:linear-gradient(150deg,#4A2350,#2E1434); border:1px solid var(--glass-line);
+  transform-origin:center bottom; transition:transform 1s cubic-bezier(.34,1.56,.64,1), opacity .9s}
+.ribbon-v,.ribbon-h{position:absolute; background:linear-gradient(var(--gold),var(--gold-soft)); opacity:.9}
+.ribbon-v{top:22%; bottom:0; left:calc(50% - 9px); width:18px}
+.ribbon-h{left:0; right:0; top:52%; height:16px}
+.bow{position:absolute; top:2%; left:50%; translate:-50% 0; width:34%; aspect-ratio:2/1;
+  border:3px solid var(--gold); border-radius:50%; transition:transform .9s, opacity .9s}
+.box:hover .box-lid{transform:translateY(-8px) rotate(-2deg)}
+.box.open .box-lid{transform:translateY(-190px) rotate(-26deg); opacity:0}
+.box.open .bow{transform:translate(-50%,-220px) rotate(30deg); opacity:0}
+.box-hint{font-size:.76rem; letter-spacing:.2em; text-transform:uppercase; color:var(--muted)}
+.gift-card{max-width:46ch; opacity:0; transform:translateY(18px) scale(.97); pointer-events:none;
+  transition:opacity .9s ease .45s, transform .9s cubic-bezier(.22,1,.36,1) .45s;
+  border:1px solid var(--glass-line); border-radius:18px; padding:1.8rem;
+  background:linear-gradient(160deg, rgba(255,255,255,.1), rgba(255,255,255,.02))}
+.gift-card.show{opacity:1; transform:none; pointer-events:auto}
+.gift-card h3{font-family:var(--display); font-weight:300; font-size:1.7rem; margin:0 0 .6rem; color:var(--gold)}
+.gift-card p{margin:0 0 1.2rem}
+.coupon{display:inline-block; border:1px dashed var(--gold-soft); border-radius:10px; padding:.7rem 1.1rem;
+  font-size:.82rem; letter-spacing:.12em; color:var(--gold); text-transform:uppercase}
+#confetti{position:fixed; inset:0; z-index:40; pointer-events:none}
+
+/* music ---------------------------------------------------------------- */
+#music{position:fixed; right:1.1rem; bottom:1.1rem; z-index:45; width:56px; height:56px; border-radius:50%;
+  border:1px solid var(--glass-line); background:rgba(18,10,22,.72); color:var(--gold); cursor:pointer;
+  -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); display:none; place-items:center;
+  transition:transform .4s ease, background .4s ease}
+#music.ready{display:grid}
+#music:hover{transform:scale(1.08)}
+#music .disc{width:22px; height:22px; border-radius:50%; border:2px solid currentColor;
+  border-top-color:transparent; animation:spin 2.6s linear infinite; animation-play-state:paused}
+#music.playing .disc{animation-play-state:running}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+footer{width:var(--shell); margin:0 auto; padding:3rem 0 5.5rem; text-align:center;
+  border-top:1px solid rgba(231,194,125,.14); color:var(--muted); font-size:.8rem; letter-spacing:.06em}
+
+/* responsive ----------------------------------------------------------- */
+@media (max-width:900px){
+  .hero{grid-template-columns:1fr; min-height:auto; padding-top:6.5rem; gap:3rem}
+  .hero .frame{max-width:340px; margin:0 auto 2.2rem}
+  .grid{grid-template-columns:repeat(2,1fr)}
+  .bar{height:14vh}
+}
+@media (max-width:480px){
+  .grid{grid-template-columns:1fr}
+  .hero-cta{flex-direction:column; align-items:stretch}
+  .btn{width:100%}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important}
+  html{scroll-behavior:auto}
+  .reveal{opacity:1; transform:none}
+}
+</style>
+</head>
+<body class="locked">
+
+<!-- ═══════════════════ PERSONALIZE EVERYTHING HERE ═══════════════════ -->
+<script>
+const CONFIG = {
+  name:        "CUTIE SNEHA ",
+  nameLine2:   "turns twenty-six",
+  dateLabel:   "16 October 2026",
+  heroText:    "Ek pura din, sirf tumhare liye. Scroll karo — thoda sa filmy hai, par sach hai.",
+  photoCaption:"HAPPY BIRTHDAY SUNDARI ❤️",
+
+  introLines: [
+    "Some Days are just Dates on A Calendar.",
+    "And Then There is a Day That Makes The World a Little More Special.",
+     "Happy Birthday, CUTIE SNEHA MAM. ❤️🎂",
+  ],
+
+  hero:   { src:"sony.png", alt:"Portrait of SONY" },
+  video:  { src:"myvdo.mp4", poster:"", caption:"Apke liye ek pyari se video — headphones laga lo." },
+
+  memories: [
+    { src:"sony2.png", caption:"This one is my Fav ✨" },
+    { src:"sny.png", caption:"Apsara"  },
+    { src:"sony3.png", caption:"Telgu Sundari"  },
+    { src:"sony5.png", caption:"MELTING BEAUTY  ❤️ " }
+  ],
+
+  letter: [
+    " ❤️ I may not be good with words, but I truly wish to see you happy always. Keep smiling, keep shining, and may all your dreams come true. You deserve all the happiness in the world. Happy Birthday, cutie! ❤️-😙",
+
+  ],
+  signature: "— Dear, cutie",
+
+  gift: {
+    hint:  "tap to open ",
+    title: "Just for Your Smile ❤️",
+    text:  "Pata nahi ye chhoti si cheez tumhe kitni pasand aayegi 🙈Bas tumhare face par ek cute si smile aa jaye mere liye wahi kaafi hai ❤️🙃 ",
+    coupon:" Made just for you ♡",
+  },
+
+  music: { src:"mysong.mp3", volume:0.96 },
+  footerText: "Made by hand, for telgu  sundari."
+};
+</script>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<div class="ambient"></div>
+<div class="grain"></div>
+<canvas id="petals" aria-hidden="true"></canvas>
+<canvas id="confetti" aria-hidden="true"></canvas>
+
+<!-- intro -->
+<div id="intro">
+  <div class="intro-inner">
+    <p class="intro-line" id="introLine"></p>
+    <div class="begin" id="beginWrap">
+      <button class="btn" id="beginBtn">Begin</button>
+      <small>best with sound on</small>
+    </div>
+  </div>
+</div>
+<div class="bar top"></div>
+<div class="bar bottom"></div>
+<button class="skip" id="skipBtn">Skip</button>
+
+<main>
+  <!-- hero -->
+  <section class="hero" id="top">
+    <div>
+      <p class="date" id="dateLabel"></p>
+      <h1><span id="heroName"></span><em id="heroName2"></em></h1>
+      <p id="heroText"></p>
+      <div class="hero-cta">
+        <a class="btn" href="#letter">Read my message</a>
+        <a class="btn" href="#gift">Open your gift</a>
+      </div>
+    </div>
+    <figure class="frame" id="heroFrame" style="margin:0">
+      <div class="ph" id="heroPhoto"></div>
+      <figcaption class="frame-cap" id="heroCap"></figcaption>
+    </figure>
+  </section>
+
+  <!-- video -->
+  <section class="reveal" id="video">
+    <p class="eyebrow">Press play</p>
+    <h2>Here's a video of your favorite person. I hope you like it! ❤️</h2>
+    <div class="video-wrap">
+      <video id="vid" controls playsinline preload="metadata"></video>
+    </div>
+    <p class="video-note" id="videoCap"></p>
+  </section>
+
+  <!-- letter -->
+  <section class="reveal" id="letter">
+    <p class="eyebrow" style="text-align:center">In my own words</p>
+    <h2 style="text-align:center">Lots of Best Wishes to you From My Side. ❤️</h2>
+    <div class="letter" id="letterBody"></div>
+  </section>
+
+  <!-- memories -->
+  <section class="reveal" id="memories">
+    <p class="eyebrow">Smile</p>
+    <h2>A .Small Part of My Collection ✨❤️🎁.</h2>
+    <div class="grid" id="memGrid"></div>
+  </section>
+
+  <!-- gift -->
+  <section class="reveal" id="gift">
+    <p class="eyebrow" style="text-align:center">One more thing</p>
+    <h2 style="text-align:center">One Last Little Message 💌</h2>
+    <div class="gift-stage">
+      <button class="box" id="giftBox" aria-label="Open your gift">
+        <span class="box-lid"></span>
+        <span class="bow"></span>
+        <span class="box-body"></span>
+        <span class="ribbon-v"></span>
+        <span class="ribbon-h"></span>
+      </button>
+      <p class="box-hint" id="giftHint"></p>
+      <div class="gift-card" id="giftCard" role="status">
+        <h3 id="giftTitle"></h3>
+        <p id="giftText"></p>
+        <span class="coupon" id="giftCoupon"></span>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer id="footer"></footer>
+
+<!-- lightbox -->
+<div id="lightbox" role="dialog" aria-modal="true" aria-label="Memory">
+  <button class="close" id="lbClose" aria-label="Close">&times;</button>
+  <figure><img id="lbImg" alt=""><figcaption id="lbCap"></figcaption></figure>
+</div>
+
+<button id="music" aria-label="Play background music" aria-pressed="false"><span class="disc"></span></button>
+<audio id="audio" loop preload="none"></audio>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---------- fill content ---------- */
+  $("#dateLabel").textContent = CONFIG.dateLabel;
+  $("#heroName").textContent  = CONFIG.name;
+  $("#heroName2").textContent = CONFIG.nameLine2;
+  $("#heroText").textContent  = CONFIG.heroText;
+  $("#heroCap").textContent   = CONFIG.photoCaption;
+  $("#videoCap").textContent  = CONFIG.video.caption;
+  $("#footer").textContent    = CONFIG.footerText;
+  $("#giftHint").textContent  = CONFIG.gift.hint;
+  $("#giftTitle").textContent = CONFIG.gift.title;
+  $("#giftText").textContent  = CONFIG.gift.text;
+  $("#giftCoupon").textContent= CONFIG.gift.coupon;
+
+  const letter = $("#letterBody");
+  CONFIG.letter.forEach(t => { const p = document.createElement("p"); p.textContent = t; letter.append(p); });
+  const sign = document.createElement("span");
+  sign.className = "sign"; sign.textContent = CONFIG.signature; letter.append(sign);
+
+  /* images with a graceful placeholder if the file is not there yet */
+  function photo(target, src, alt){
+    const img = new Image();
+    img.alt = alt || "";
+    img.onerror = () => {
+      target.innerHTML = `<div class="missing"><b>${src}</b>is file ko is HTML ke folder mein rakho</div>`;
+    };
+    img.src = src;
+    target.append(img);
+  }
+  photo($("#heroPhoto"), CONFIG.hero.src, CONFIG.hero.alt);
+
+  const grid = $("#memGrid");
+  CONFIG.memories.forEach((m, i) => {
+    const fig = document.createElement("figure");
+    fig.className = "mem"; fig.tabIndex = 0; fig.dataset.i = i;
+    fig.innerHTML = `<div class="ph"></div><figcaption>${m.caption}</figcaption>`;
+    photo(fig.querySelector(".ph"), m.src, m.caption);
+    grid.append(fig);
+  });
+
+  const vid = $("#vid");
+  vid.src = CONFIG.video.src;
+  if (CONFIG.video.poster) vid.poster = CONFIG.video.poster;
+  vid.addEventListener("error", () => {
+    $(".video-wrap").innerHTML =
+      `<div class="missing" style="aspect-ratio:16/9"><b>${CONFIG.video.src}</b>video is HTML ke saath same folder mein rakho</div>`;
+  });
+
+  /* ---------- cinematic intro ---------- */
+  const intro = $("#intro"), lineEl = $("#introLine"), beginWrap = $("#beginWrap");
+  let li = 0, timer;
+
+  function nextLine(){
+    if (li >= CONFIG.introLines.length){ beginWrap.classList.add("show"); return; }
+    lineEl.textContent = CONFIG.introLines[li++];
+    lineEl.classList.remove("show"); void lineEl.offsetWidth; lineEl.classList.add("show");
+    timer = setTimeout(nextLine, 3000);
+  }
+
+  function enter(){
+    clearTimeout(timer);
+    intro.classList.add("done");
+    document.body.classList.remove("locked");
+    reveal();
+    tryMusic();
+  }
+  $("#beginBtn").addEventListener("click", enter);
+  $("#skipBtn").addEventListener("click", enter);
+
+  if (reduced){ lineEl.textContent = CONFIG.introLines.at(-1); beginWrap.classList.add("show"); }
+  else setTimeout(nextLine, 700);
+
+  /* ---------- scroll reveals ---------- */
+  function reveal(){
+    const io = new IntersectionObserver(es => {
+      es.forEach(e => { if (e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target); } });
+    }, { threshold:.16 });
+    document.querySelectorAll(".reveal").forEach(el => io.observe(el));
+  }
+
+  /* ---------- hero frame tilt ---------- */
+  const frame = $("#heroFrame");
+  if (!reduced && matchMedia("(hover:hover)").matches){
+    frame.addEventListener("pointermove", e => {
+      const r = frame.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5;
+      frame.style.transform = `rotateY(${x * 7}deg) rotateX(${-y * 7}deg) translateY(-6px)`;
+    });
+    frame.addEventListener("pointerleave", () => { frame.style.transform = ""; });
+  }
+
+  /* ---------- lightbox ---------- */
+  const lb = $("#lightbox"), lbImg = $("#lbImg"), lbCap = $("#lbCap");
+  let lastFocus = null;
+  function openLb(i){
+    const m = CONFIG.memories[i];
+    lastFocus = document.activeElement;
+    lbImg.src = m.src; lbImg.alt = m.caption; lbCap.textContent = m.caption;
+    lb.classList.add("open"); document.body.classList.add("locked"); $("#lbClose").focus();
+  }
+  function closeLb(){
+    lb.classList.remove("open"); document.body.classList.remove("locked");
+    if (lastFocus) lastFocus.focus();
+  }
+  grid.addEventListener("click", e => {
+    const f = e.target.closest(".mem"); if (f) openLb(+f.dataset.i);
+  });
+  grid.addEventListener("keydown", e => {
+    if (e.key === "Enter" || e.key === " "){
+      const f = e.target.closest(".mem"); if (f){ e.preventDefault(); openLb(+f.dataset.i); }
+    }
+  });
+  $("#lbClose").addEventListener("click", closeLb);
+  lb.addEventListener("click", e => { if (e.target === lb) closeLb(); });
+  addEventListener("keydown", e => { if (e.key === "Escape" && lb.classList.contains("open")) closeLb(); });
+
+  /* ---------- gift ---------- */
+  const box = $("#giftBox");
+  box.addEventListener("click", () => {
+    if (box.classList.contains("open")) return;
+    box.classList.add("open");
+    $("#giftHint").textContent = "";
+    $("#giftCard").classList.add("show");
+    burst();
+  });
+
+  /* ---------- background music ---------- */
+  const audio = $("#audio"), mBtn = $("#music");
+  audio.src = CONFIG.music.src;
+  audio.volume = 0;
+  let musicOK = false;
+  audio.addEventListener("canplay", () => { musicOK = true; mBtn.classList.add("ready"); });
+  audio.addEventListener("error", () => { mBtn.classList.remove("ready"); });
+  audio.load();
+
+  function fadeTo(target){
+    const step = (target - audio.volume) / 24;
+    clearInterval(audio._f);
+    audio._f = setInterval(() => {
+      audio.volume = Math.min(1, Math.max(0, audio.volume + step));
+      if (Math.abs(audio.volume - target) < .02){ audio.volume = target; clearInterval(audio._f); }
+    }, 40);
+  }
+  function setPlaying(on){
+    mBtn.classList.toggle("playing", on);
+    mBtn.setAttribute("aria-pressed", String(on));
+    mBtn.setAttribute("aria-label", on ? "Pause background music" : "Play background music");
+  }
+  function tryMusic(){
+    if (!musicOK) return;
+    audio.play().then(() => { fadeTo(CONFIG.music.volume); setPlaying(true); }).catch(() => setPlaying(false));
+  }
+  mBtn.addEventListener("click", () => {
+    if (audio.paused) tryMusic();
+    else { fadeTo(0); setTimeout(() => audio.pause(), 700); setPlaying(false); }
+  });
+
+  /* ---------- drifting petals ---------- */
+  const pc = $("#petals"), px = pc.getContext("2d");
+  let petals = [], W, H;
+  function size(){
+    W = pc.width = innerWidth; H = pc.height = innerHeight;
+    const n = innerWidth < 640 ? 14 : 28;
+    petals = Array.from({ length:n }, () => ({
+      x:Math.random()*W, y:Math.random()*H, r:Math.random()*2.4 + .8,
+      s:Math.random()*.35 + .12, d:Math.random()*Math.PI*2, o:Math.random()*.4 + .18
+    }));
+  }
+  function loop(){
+    px.clearRect(0,0,W,H);
+    petals.forEach(p => {
+      p.y -= p.s; p.d += .01; p.x += Math.sin(p.d)*.4;
+      if (p.y < -12){ p.y = H + 12; p.x = Math.random()*W; }
+      px.globalAlpha = p.o;
+      px.fillStyle = Math.random() > .5 ? "#E7C27D" : "#D8788F";
+      px.beginPath(); px.arc(p.x, p.y, p.r, 0, 7); px.fill();
+    });
+    px.globalAlpha = 1;
+    requestAnimationFrame(loop);
+  }
+  if (!reduced){ size(); addEventListener("resize", size); loop(); }
+
+  /* ---------- confetti burst ---------- */
+  const cc = $("#confetti"), cx = cc.getContext("2d");
+  let bits = [], running = false;
+  function burst(){
+    if (reduced) return;
+    cc.width = innerWidth; cc.height = innerHeight;
+    const r = box.getBoundingClientRect();
+    const ox = r.left + r.width/2, oy = r.top + r.height/3;
+    const colors = ["#E7C27D","#D8788F","#F4EAE2","#C9A469"];
+    for (let i = 0; i < 130; i++){
+      const a = Math.random()*Math.PI*2, v = Math.random()*9 + 3;
+      bits.push({ x:ox, y:oy, vx:Math.cos(a)*v, vy:Math.sin(a)*v - 6,
+        w:Math.random()*7 + 3, h:Math.random()*4 + 2, rot:Math.random()*6,
+        vr:(Math.random()-.5)*.3, c:colors[i % colors.length], life:1 });
+    }
+    if (!running){ running = true; fall(); }
+  }
+  function fall(){
+    cx.clearRect(0,0,cc.width,cc.height);
+    bits.forEach(b => {
+      b.vy += .22; b.x += b.vx; b.y += b.vy; b.vx *= .99; b.rot += b.vr; b.life -= .006;
+      cx.save(); cx.translate(b.x, b.y); cx.rotate(b.rot);
+      cx.globalAlpha = Math.max(0, b.life); cx.fillStyle = b.c;
+      cx.fillRect(-b.w/2, -b.h/2, b.w, b.h); cx.restore();
+    });
+    bits = bits.filter(b => b.life > 0 && b.y < cc.height + 40);
+    if (bits.length) requestAnimationFrame(fall);
+    else { running = false; cx.clearRect(0,0,cc.width,cc.height); }
+  }
+  addEventListener("resize", () => { cc.width = innerWidth; cc.height = innerHeight; });
+})();
+</script>
+</body>
+</html>
